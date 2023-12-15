@@ -1,9 +1,18 @@
-.gform-settings-choice--visual label {
-    padding: 1.625rem 1.5rem 0.75rem !important;
-    min-width: 8.75rem;
-    margin-right: 1rem;
+body {
+    background-color: #f0f0f1 !important;
+    font-family: -apple-system, system-ui, "Segoe UI", "Helvetica Neue", sans-serif;
+    font-size: 13px !important;
 }
-.gform-settings-choice--visual img, .gform-settings-choice--visual svg {
-    height: auto !important;
-    width: 100% !important;
+.container {
+    max-width: 100% !important;
+}
+#universal-message-container {
+    background: #fff;
+    border: 1px solid #e3e6ef;
+    border-radius: 3px;
+    box-shadow: 0 1px 4px rgba(18,25,97,.078);
+    box-sizing: border-box;
+}
+#universal-message-container sup {
+    color: red;
 }

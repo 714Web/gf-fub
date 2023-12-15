@@ -49,11 +49,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	public function init() {
 		parent::init();
 
-		// # FRONTEND FUNCTIONS 
-		// add_filter( 'gform_submit_button', array( $this, 'form_submit_button' ), 10, 2 );
-
-		// # SIMPLE CONDITION EXAMPLE 
-		// add_action( 'gform_after_submission', array( $this, 'after_submission' ), 10, 2 );
+		add_action ( 'wp_head', array( $this, 'add_fub_pixel') );
 	}
 
 	/**
@@ -62,11 +58,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	public function init_admin() {
 		parent::init_admin();
 
-		// add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
-	}
-
-	public function admin_enqueue_scripts() {
-		// do something
+		// add_action ( 'wp_head', 'add_fub_pixel' );
 	}
 
 
@@ -86,7 +78,10 @@ class GFFollowUpBoss extends GFFeedAddOn {
 				'deps'    => array( 'jquery' ),
 				'enqueue' => array(
 					array(
-						'admin_page' => array( 'plugin_page' ),
+						'admin_page' => array( 
+							'plugin_page',
+							'plugin_settings'
+						),
 					)
 				)
 			),
@@ -109,17 +104,30 @@ class GFFollowUpBoss extends GFFeedAddOn {
 				'version' => '5.3.1',
 				'enqueue' => array(
 					array(
+						'admin_page' => array( 
+							'plugin_page',
+							'plugin_settings'
+						),
+					)
+				)
+			),
+			array(
+				'handle'  => 'gffub_plugin_page',
+				'src'     => $this->get_base_url() . '/css/gffub-plugin-page.css',
+				'version' => $this->_version,
+				'enqueue' => array(
+					array(
 						'admin_page' => array( 'plugin_page' ),
 					)
 				)
 			),
 			array(
-				'handle'  => 'gffub_page_settings_css',
-				'src'     => $this->get_base_url() . '/css/gffub-page-settings.css',
+				'handle'  => 'gffub_plugin_settings',
+				'src'     => $this->get_base_url() . '/css/gffub-plugin-settings.css',
 				'version' => $this->_version,
 				'enqueue' => array(
 					array(
-						'admin_page' => array( 'plugin_page' ),
+						'admin_page' => array( 'plugin_settings' ),
 					)
 				)
 			)
@@ -134,19 +142,43 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	/**
 	 * Creates a custom page for this add-on.
 	 */
-	public function plugin_page() {
+	public function plugin_page_disabled() {
+		$data = array(
+            "source" => 'gf-fub',
+            "person" => array(
+                "name" 		=> 'Jim Bob',
+                "emails" 	=> array(
+					array(
+						"value" => 'jimbob@aol.com'
+					)
+				),
+                "phones"	 => array(
+					array(
+						"value" => '865-555-1212'
+					)
+				),
+                "tags" => array('tag1','tag2')
+            ),
+        );
+
+		$response = $code = '';
+		// $response = $this->send_to_fub( $data, 'POST', 'events' );
+		// $response = $this->send_to_fub( array(), 'GET', 'people' );
+		$code = $this->send_to_fub( array(), 'GET', 'identity' );
+		// $code = $code['statusCode'];
 		?>
 		<div class="wrap">
-			<p><a href="<?php echo admin_url('admin.php?page=gf_settings&subview=gfspamrules'); ?>">Edit Settings</a></p>
+			<p><a href="<?php echo admin_url('admin.php?page=gf_settings&subview='.$this->_slug); ?>">Edit Settings</a></p>
 
-			<p class="my-4 lead"><strong>Instructions</strong></p>
+			<div class="alert alert-danger px-3 w-25" role="alert"><h4 class="alert-heading mb-0">Test Mode</h4></div>
 
-			<p>Nullam id dolor id nibh ultricies vehicula ut id elit. Curabitur blandit tempus porttitor. Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.</p>
-
-			<div id="description-message-container">
+			<div id="universal-message-container">
 				<div class="container">
 					<div class="row">
 						<div class="col">
+							Code: <br><pre><?php print_r($code); ?></pre>
+							<br>
+							Response: <br><pre><?php print_r($response); ?></pre>
 						</div>
 					</div>
 				</div>
@@ -173,14 +205,16 @@ class GFFollowUpBoss extends GFFeedAddOn {
 						'type'              => 'text',
 						'class'             => 'small',
 						'feedback_callback' => array( $this, 'is_valid_setting' ),
+						// 'validation_callback' => array( $this, 'is_valid_setting' ),
 					),
 					array(
 						'name'    => 'gffub-pixel',
 						'label'   => esc_html__( 'FUB Pixel Code', 'gffub' ),
 						// translators: %1 is an opening <a> tag, and %2 is a closing </a> tag.
-						'description' => '<p>' . sprintf( esc_html__( 'Paste your Pixel Tracking Code below, but only if you haven\'t already added it to your site via another method. Be sure to turn on the option, "Enable form capture and creating new leads in FUB". For step-by-step instructions, %1$sclick here.%2$s', 'gffub' ), '<a href="https://help.followupboss.com/hc/en-us/articles/360037775174-Follow-Up-Boss-Pixel-Overview" target="_blank">', '</a>' ) . '</p>',
+						'description' => '<p>' . sprintf( esc_html__( 'Paste your Pixel Tracking Code below, but only if you haven\'t already added it to your site by another method. In your FUB account be sure to turn on the option, "Enable form capture and creating new leads in FUB". For step-by-step instructions, %1$sclick here.%2$s', 'gffub' ), '<a href="https://help.followupboss.com/hc/en-us/articles/360037775174-Follow-Up-Boss-Pixel-Overview" target="_blank">', '</a>' ) . '</p>',
 						'type'    => 'textarea',
-						'class'   => 'medium',
+						'class'   => 'large',
+						'validation_callback' => array( $this, 'prevent_error' ),
 					),
 				)
 			)
@@ -277,19 +311,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	public function feed_list_columns() {
 		return array(
 			'feedName'  => esc_html__( 'Name', 'gffub' ),
-			// 'mytextbox' => esc_html__( 'My Textbox', 'gffub' ),
 		);
-	}
-
-	/**
-	 * Format the value to be displayed in the mytextbox column.
-	 *
-	 * @param array $feed The feed being included in the feed list.
-	 *
-	 * @return string
-	 */
-	public function get_column_value_mytextbox( $feed ) {
-		return '<b>' . rgars( $feed, 'meta/mytextbox' ) . '</b>';
 	}
 
 	/**
@@ -303,7 +325,11 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		$settings = $this->get_plugin_settings();
 
 		// Access a specific setting e.g. an api key
-		$key = rgar( $settings, 'apiKey' );
+		$key = rgar( $settings, 'gffub-apikey' );
+
+		if ( empty($key) ) {
+			return false;
+		}
 
 		return true;
 	}
@@ -322,9 +348,10 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	 * @return bool|void
 	 */
 	public function process_feed( $feed, $entry, $form ) {
-		$feedName  = $feed['meta']['feedName'];
-		$mytextbox = $feed['meta']['mytextbox'];
-		$checkbox  = $feed['meta']['mycheckbox'];
+		$feedName  	= $feed['meta']['feedName'];
+		$source  	= $feed['meta']['source'];
+		$tags_csv 	= $feed['meta']['tags'];
+		$tags 		= preg_split('/, ?/',$tags_csv);
 
 		// Retrieve the name => value pairs for all fields mapped in the 'mappedFields' field map.
 		$field_map = $this->get_field_map_fields( $feed, 'mappedFields' );
@@ -332,15 +359,100 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		// Loop through the fields from the field map setting building an array of values to be passed to the third-party service.
 		$merge_vars = array();
 		foreach ( $field_map as $name => $field_id ) {
-
 			// Get the field value for the specified field id
 			$merge_vars[ $name ] = $this->get_field_value( $form, $entry, $field_id );
-
 		}
 
 		// Send the values to the third-party service.
+		
+        $data = array(
+            "source" => $source,
+            "person" => array(
+                "name" 		=> $merge_vars['name'],
+                "emails" 	=> array(
+					array(
+						"value" => $merge_vars['email']
+					)
+				),
+                "phones"	 => array(
+					array(
+						"value" => $merge_vars['phone']
+					)
+				),
+                "tags" => $tags,
+            ),
+        );
+
+		// https://docs.followupboss.com/reference/people-post
+		// 
+		// "The best way to send leads into Follow Up Boss ... 
+		// is to use event notifications (POST /v1/events)."
+		//
+		// Also...
+		//
+		// "Source Information Can Only Be Set on Creation. The 
+		// source and sourceUrl fields can only be set once on 
+		// the creation of a person."
+		$result = $this->send_to_fub( $data, 'POST', 'events' );
+		GFCommon::log_debug( __METHOD__ . '(): FUB Response - '.print_r( $result, true ) );
 	}
 
+	public function send_to_fub( $data, $method='GET', $endpoint='identity' ) {
+		$code = 000;
+		$result = array();
+		$headers = array(
+			'Content-Type: application/json',
+			'X-System: 714Web',
+			'X-System-Key: 4086a077f73e3c56e3760c975655889d',
+		);
+		$settings 	= $this->get_plugin_settings();
+		$apiKey 	= rgar( $settings, 'gffub-apikey' );
+
+        // init cURL
+        $ch = curl_init('https://api.followupboss.com/v1/'.$endpoint);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        curl_setopt($ch, CURLOPT_USERPWD, $apiKey . ':');
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+        // make API call
+        $response = curl_exec($ch);
+        if ($response === false) {
+            exit('cURL error: ' . curl_error($ch) . "\n");
+        }
+
+        // check HTTP status code
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($code == 201) {
+            GFCommon::log_debug( __METHOD__ . '(): Code 201 - New contact created.' );
+        } elseif ($code == 200) {
+            GFCommon::log_debug( __METHOD__ . '(): Code 200 - Existing contact updated.' );
+        } else {
+            GFCommon::log_debug( __METHOD__ . '(): Code '.$code.' - Error.' );
+        }
+
+        // dump response
+        if ($response) {
+            $response = json_decode( $response, true );
+			$result = array_merge( $response, array('statusCode' => $code) );
+        }
+		return $result;
+	}
+
+
+	public function add_fub_pixel() {
+		// Get the plugin settings.
+		$settings = $this->get_plugin_settings();
+
+		// Access a specific setting e.g. an api key
+		$pixel = rgar( $settings, 'gffub-pixel' );
+
+		if ( $pixel ) {
+			echo $pixel;
+		}
+	}
 
 
 	// # HELPERS / CALLBACKS --------------------------------------------------------------------------------------
@@ -353,8 +465,51 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	 * @return bool
 	 */
 	public function is_valid_setting( $value ) {
-		return strlen( $value ) < 10;
+		// Get the plugin settings.
+		$settings = $this->get_plugin_settings();
+
+		// Access a specific setting e.g. an api key
+		$key = rgar( $settings, 'gffub-apikey' );
+
+		// Don't validate if no API Key
+		if ( empty($key) ) {
+			return;
+		}
+		
+		$identity = $this->send_to_fub( array(), 'GET', 'identity' );
+		$code = $identity['statusCode'];
+		
+		$result = ($code == 200) ? true : false;
+
+		if ( $result ) {
+			$heading = 'Connected!';
+			$alert_type = 'success';
+			$msg = '<p>Account: <code>'.$identity['account']['id'].'</code> &nbsp; Domain: <code>'.$identity['account']['domain'].'</code> &nbsp; Account Owner: <code>'.$identity['account']['owner']['name'].'</code></p>';
+			
+			if ( $identity['account']['owner']['email'] !== $identity['user']['email'] ) {
+				$msg .= '<hr><p class="mb-0">This API Key was created by <code>'.$identity['user']['name'].'</code> <em style="font-weight: bold;">(If this FUB user is deleted, this API Key will no longer work.)</em></p>';
+			} else {
+				$msg .= '<hr><p class="mb-0">This API Key was created by the Account Owner: <code>'.$identity['account']['owner']['email'].'</code>.</p>';
+			}
+		} else {
+			$heading = 'Not Connected.';
+			$alert_type = 'danger';
+			$msg .= '<p class="mb-0">This API Ket is NOT VALID. Please <a href="https://help.followupboss.com/hc/en-us/articles/360014289393-API-Key" target="_blank" class="alert-link">create a new one</a> using an admin user or the account owner.</p>';
+		}
+		
+		echo '<div class="alert alert-'.$alert_type.' px-3" role="alert"><h4 class="alert-heading">'.$heading.'</h4>'.$msg.'</div>';
+
+		return $result;
 	}
 
+	/**
+	 * Prevent error:
+	 *
+	 * "The text you have entered is not valid. For security reasons, some characters are not allowed. Fix it"
+	 * x
+	 */
+	public function prevent_error( $value ) {
+		return $value;
+	}
 
 }

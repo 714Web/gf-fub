@@ -2,7 +2,7 @@
 /*
 Plugin Name: Gravity Forms FUB Integration
 Plugin URI: https://github.com/jeremycaris/gf-fub
-Description: A Gravity Forms to easily integrate the Follow Up Boss Pixel and assign tags to leads utilizing the Follow Up Boss Open API.
+Description: A Gravity Forms to easily integrate the Follow Up Boss Pixel and assign a custom lead source and tags to leads utilizing the Follow Up Boss Open API.
 Version: 0.1
 Author: Jeremy Caris
 Author URI: https://github.com/jeremycaris
@@ -58,5 +58,4 @@ $myUpdateChecker = PucFactory::buildUpdateChecker(
     __FILE__,
     'gf-fub'
 );
-// $myUpdateChecker->setAuthentication('411a94ddac97544ac4d5e1bc0ccde4fb976a71cc');
 $myUpdateChecker->getVcsApi()->enableReleaseAssets();

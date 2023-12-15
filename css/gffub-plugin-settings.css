@@ -1,0 +1,18 @@
+.container {
+    max-width: 100% !important;
+}
+.gform-settings__wrapper .alert.alert-success {
+    color: #0f5132;
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+}
+.gform-settings__wrapper .alert.alert-danger {
+    color: #842029;
+    background-color: #f8d7da;
+    border-color: #f5c2c7;
+}
+.gform-settings__wrapper .alert.alert-success code, 
+.gform-settings__wrapper .alert.alert-danger code {
+    color: #000;
+    font-weight: bold;
+}
