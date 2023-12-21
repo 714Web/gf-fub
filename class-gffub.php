@@ -502,7 +502,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		if ( $result ) {
 			$heading = 'Connected!';
 			$alert_type = 'success';
-			$msg = '<p>Account: <code>'.$identity['account']['id'].'</code> &nbsp; Domain: <code>'.$identity['account']['domain'].'</code> &nbsp; Account Owner: <code>'.$identity['account']['owner']['name'].'</code></p>';
+			$msg = '<p>Account: <code>'.$identity['account']['id'].'</code> &nbsp; Domain: <code>'.$identity['account']['domain'].'</code> &nbsp; Account Owner: <code>'.$identity['account']['owner']['name'].'</code> &nbsp; Plugin X-System: <code>714Web</code>'.'</p>';
 			
 			if ( $identity['account']['owner']['email'] !== $identity['user']['email'] ) {
 				$msg .= '<hr><p class="mb-0">This API Key was created by <code>'.$identity['user']['name'].'</code> <em style="font-weight: bold;">(If this FUB user is deleted, this API Key will no longer work.)</em></p>';
