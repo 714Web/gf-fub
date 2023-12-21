@@ -12,6 +12,12 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	protected $_title = 'Gravity Forms FUB Integration';
 	protected $_short_title = 'FUB Integration';
 
+	protected $_fub_headers = array(
+		'Content-Type: application/json',
+		'X-System: 714Web',
+		'X-System-Key: 4086a077f73e3c56e3760c975655889d',
+	);
+
 	private static $_instance = null;
 
 	/**
@@ -27,29 +33,13 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		return self::$_instance;
 	}
 
-	private function __clone() {
-	} /* do nothing */
-
-	/**
-	 * Handles anything which requires early initialization.
-	 */
-	// public function pre_init() {
-	// 	parent::pre_init();
-
-	// 	if ( $this->is_gravityforms_supported() && class_exists( 'GF_Field' ) ) {
-	// 		require_once( 'includes/class-gf-field-quiz.php' );
-
-	// 		add_filter( 'gform_export_field_value', array( $this, 'display_export_field_value' ), 10, 4 );
-	// 	}
-	// }
-
 	/**
 	 * Handles hooks and loading of language files.
 	 */
 	public function init() {
 		parent::init();
 
-		add_action ( 'wp_head', array( $this, 'add_fub_pixel') );
+		add_action ( 'wp_head', array( $this, 'maybe_add_fub_pixel') );
 	}
 
 	/**
@@ -57,8 +47,6 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	 */
 	public function init_admin() {
 		parent::init_admin();
-
-		// add_action ( 'wp_head', 'add_fub_pixel' );
 	}
 
 
@@ -130,7 +118,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 						'admin_page' => array( 'plugin_settings' ),
 					)
 				)
-			)
+			),
 		);
 
 		return array_merge( parent::styles(), $styles );
@@ -205,16 +193,27 @@ class GFFollowUpBoss extends GFFeedAddOn {
 						'type'              => 'text',
 						'class'             => 'small',
 						'feedback_callback' => array( $this, 'is_valid_setting' ),
-						// 'validation_callback' => array( $this, 'is_valid_setting' ),
 					),
 					array(
 						'name'    => 'gffub-pixel',
-						'label'   => esc_html__( 'FUB Pixel Code', 'gffub' ),
+						'label'   => esc_html__( 'FUB Pixel Tracking Code', 'gffub' ),
 						// translators: %1 is an opening <a> tag, and %2 is a closing </a> tag.
-						'description' => '<p>' . sprintf( esc_html__( 'Paste your Pixel Tracking Code below, but only if you haven\'t already added it to your site by another method. In your FUB account be sure to turn on the option, "Enable form capture and creating new leads in FUB". For step-by-step instructions, %1$sclick here.%2$s', 'gffub' ), '<a href="https://help.followupboss.com/hc/en-us/articles/360037775174-Follow-Up-Boss-Pixel-Overview" target="_blank">', '</a>' ) . '</p>',
+						'description' => '<p>' . sprintf( esc_html__( 'If you\'ve already added the Pixel Tracking Code to your site by another method, please remove it and then paste your Pixel Tracking Code below. In your FUB account be sure to turn on the option, "Enable form capture and creating new leads in FUB". For step-by-step instructions, %1$sclick here.%2$s', 'gffub' ), '<a href="https://help.followupboss.com/hc/en-us/articles/360037775174-Follow-Up-Boss-Pixel-Overview" target="_blank">', '</a>' ) . '</p>',
 						'type'    => 'textarea',
 						'class'   => 'large',
 						'validation_callback' => array( $this, 'prevent_error' ),
+					),
+					array(
+						'label'   => esc_html__( 'Disable FUB Pixel', 'gffub' ),
+						'type'    => 'checkbox',
+						'name'    => 'disable-pixel-title',
+						'description' => '<p style="color: #e54c3b;"><a name="disable_pixel"></a>' . sprintf( esc_html__( 'Only use this option if you need to set a custom source (for NEW leads only) since this will disable all Pixel functionality, such as providing real-time tracking of users throughout your site.', 'gffub' ) ) . '</p><p>' . sprintf( esc_html__( 'Note: If the Pixel is disabled, only forms that have a FUB Integration feed configured will send leads to your account.', 'gffub' ) ) . '</p>',
+						'choices' => array(
+							array(
+								'label' => esc_html__( 'Disable the FUB Pixel', 'gffub' ),
+								'name'  => 'disable-pixel',
+							),
+						),
 					),
 				)
 			)
@@ -240,7 +239,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	public function feed_settings_fields() {
 		return array(
 			array(
-				'title'  => esc_html__( 'Simple Feed Settings', 'gffub' ),
+				'title'  => esc_html__( 'FUB Feed Settings', 'gffub' ),
 				'fields' => array(
 					array(
 						'label'   => esc_html__( 'Feed name', 'gffub' ),
@@ -250,14 +249,13 @@ class GFFollowUpBoss extends GFFeedAddOn {
 					),
 					array(
 						'name'      => 'mappedFields',
-						'label'     => esc_html__( 'Map form fields to your Follow Up Boss contacts:', 'gffub' ),
-						// translators: %1 is an opening <a> tag, and %2 is a closing </a> tag.
-						'description' => '<p>' . sprintf( esc_html__( 'These fields help ensure the accuracy of FUB Lead Dedpulication. For more info, %1$sclick here.%2$s', 'gffub' ), '<a href="https://help.followupboss.com/hc/en-us/articles/11460704008855-Lead-Deduplication" target="_blank">', '</a>' ) . '</p>',
+						'label'     => esc_html__( 'Map fields', 'gffub' ),
+						'description' => '<p>' . sprintf( esc_html__( 'Mapping these fields helps ensure the accuracy of %1$sFUB Lead Dedpulication%2$s.', 'gffub' ), '<a href="https://help.followupboss.com/hc/en-us/articles/11460704008855-Lead-Deduplication" target="_blank">', '</a>' ) . '</p>',
 						'type'      => 'field_map',
 						'field_map' => array(
 							array(
 								'name'     => 'name',
-								'label'    => esc_html__( 'Name', 'gffub' ),
+								'label'    => esc_html__( 'Name (Full Name)', 'gffub' ),
 								'required' => 0,
 								'field_type' => array( 'name', 'hidden' ),
 							),
@@ -276,32 +274,38 @@ class GFFollowUpBoss extends GFFeedAddOn {
 						),
 					),
 					array(
-						'name'    => 'source',
-						'type'    => 'text',
-						'class'   => 'medium merge-tag-support mt-position-right mt-hide_all_fields',
-						'label'   => esc_html__( 'Lead Source', 'gffub' ),
-						// translators: %1 is an opening <a> tag, and %2 is a closing </a> tag.
-						'description' => '<p>' . sprintf( esc_html__( 'Type any custom Lead Source and/or utilize Gravity Forms Merge Tags.', 'gffub' ) ) . '</p>',
-					),
-					array(
 						'name'    => 'tags',
 						'type'    => 'text',
 						'class'   => 'medium merge-tag-support mt-position-right mt-hide_all_fields',
 						'label'   => esc_html__( 'Tags', 'gffub' ),
-						// translators: %1 is an opening <a> tag, and %2 is a closing </a> tag.
 						'description' => '<p>' . sprintf( esc_html__( 'Type any tags and/or utilize Gravity Forms Merge Tags. Must be a comma separated list (e.g. new lead, My Tag, web source).', 'gffub' ) ) . '</p>',
+					),
+					array(
+						'name'    => 'message',
+						'type'    => 'textarea',
+						'class'   => 'medium merge-tag-support mt-position-right mt-hide_all_fields',
+						'label'   => esc_html__( 'Message', 'gffub' ),
+						'description' => '<p>' . sprintf( esc_html__( '(Not required unless the %1$sFUB Pixel is disabled%2$s.)', 'gffub' ), '<a href="admin.php?page=gf_settings&subview=' . $this->_slug . '#disable_pixel" target="_blank">', '</a>' ) . '</p>',
+					),
+					array(
+						'name'    => 'source',
+						'type'    => 'text',
+						'class'   => 'medium merge-tag-support mt-position-right mt-hide_all_fields',
+						'label'   => esc_html__( 'Source', 'gffub' ),
+						'description' => '<p>' . sprintf( esc_html__( 'This field will not have an effect unless the %1$sFUB Pixel is disabled%2$s and the lead does not already exist in your account.', 'gffub' ), '<a href="admin.php?page=gf_settings&subview=' . $this->_slug . '#disable_pixel" target="_blank">', '</a>' ) . '</p><p>' . sprintf( esc_html__( '(The source for an %1$sexisting%2$s person cannot be changed programmatically. %3$sLearn how to change it manually%4$s.)', 'gffub' ), '<u>', '</u>', '<a href="https://help.followupboss.com/hc/en-us/articles/360015942434-Manually-Add-a-Lead-Source-Name" target="_blank">', '</a>' ) . '</p>',
 					),
 					array(
 						'name'           => 'condition',
 						'label'          => esc_html__( 'Condition', 'gffub' ),
 						'type'           => 'feed_condition',
 						'checkbox_label' => esc_html__( 'Enable Condition', 'gffub' ),
-						'instructions'   => esc_html__( 'Process this simple feed if', 'gffub' ),
+						'instructions'   => esc_html__( 'Process this FUB Integration feed if', 'gffub' ),
 					),
 				),
 			),
 		);
 	}
+
 
 	/**
 	 * Configures which columns should be displayed on the feed list page.
@@ -320,17 +324,27 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	 * @return bool
 	 */
 	public function can_create_feed() {
-
-		// Get the plugin settings.
 		$settings = $this->get_plugin_settings();
 
-		// Access a specific setting e.g. an api key
 		$key = rgar( $settings, 'gffub-apikey' );
 
 		if ( empty($key) ) {
 			return false;
 		}
 
+		return true;
+	}
+
+	/**
+	 * Allow the feed to be duplicated.
+	 *
+	 * @since 4.7
+	 *
+	 * @param array|int $id The ID of the feed to be duplicated or the feed object when duplicating a form.
+	 *
+	 * @return bool
+	 */
+	public function can_duplicate_feed( $id ) {
 		return true;
 	}
 
@@ -350,8 +364,13 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	public function process_feed( $feed, $entry, $form ) {
 		$feedName  	= $feed['meta']['feedName'];
 		$source  	= $feed['meta']['source'];
-		$tags_csv 	= $feed['meta']['tags'];
-		$tags 		= preg_split('/, ?/',$tags_csv);
+		$source 	= GFCommon::replace_variables( $source, $form, $entry, false, false, false, 'text' ); // process merge tags
+		$tags 		= $feed['meta']['tags'];
+		$tags 		= GFCommon::replace_variables( $tags, $form, $entry, false, false, false, 'text' ); // process merge tags
+		$tags 		= preg_split('/, ?/',$tags);
+		$msg  		= $feed['meta']['message'];
+		$msg 		= GFCommon::replace_variables( $msg, $form, $entry, false, false, false, 'text' ); // process merge tags
+		$msg 		= trim( $msg );
 
 		// Retrieve the name => value pairs for all fields mapped in the 'mappedFields' field map.
 		$field_map = $this->get_field_map_fields( $feed, 'mappedFields' );
@@ -360,11 +379,11 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		$merge_vars = array();
 		foreach ( $field_map as $name => $field_id ) {
 			// Get the field value for the specified field id
-			$merge_vars[ $name ] = $this->get_field_value( $form, $entry, $field_id );
+			$value = $this->get_field_value( $form, $entry, $field_id );
+			$merge_vars[ $name ] = ( $value ) ? $value : '';
 		}
 
 		// Send the values to the third-party service.
-		
         $data = array(
             "source" => $source,
             "person" => array(
@@ -381,6 +400,8 @@ class GFFollowUpBoss extends GFFeedAddOn {
 				),
                 "tags" => $tags,
             ),
+			"type" => "General Inquiry",
+			"message" => $msg,
         );
 
 		// https://docs.followupboss.com/reference/people-post
@@ -400,11 +421,6 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	public function send_to_fub( $data, $method='GET', $endpoint='identity' ) {
 		$code = 000;
 		$result = array();
-		$headers = array(
-			'Content-Type: application/json',
-			'X-System: 714Web',
-			'X-System-Key: 4086a077f73e3c56e3760c975655889d',
-		);
 		$settings 	= $this->get_plugin_settings();
 		$apiKey 	= rgar( $settings, 'gffub-apikey' );
 
@@ -413,7 +429,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_USERPWD, $apiKey . ':');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $this->_fub_headers);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 
@@ -442,16 +458,20 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	}
 
 
-	public function add_fub_pixel() {
-		// Get the plugin settings.
+	public function maybe_add_fub_pixel() {
 		$settings = $this->get_plugin_settings();
-
-		// Access a specific setting e.g. an api key
-		$pixel = rgar( $settings, 'gffub-pixel' );
-
-		if ( $pixel ) {
-			echo $pixel;
+		$disable = rgar( $settings, 'disable-pixel' );
+		if ( $disable ) {
+			return;
 		}
+
+		$settings = $this->get_plugin_settings();
+		$pixel = rgar( $settings, 'gffub-pixel' );
+		if ( empty($pixel) ) {
+			return;
+		}
+
+		echo $pixel;
 	}
 
 
@@ -465,10 +485,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	 * @return bool
 	 */
 	public function is_valid_setting( $value ) {
-		// Get the plugin settings.
 		$settings = $this->get_plugin_settings();
-
-		// Access a specific setting e.g. an api key
 		$key = rgar( $settings, 'gffub-apikey' );
 
 		// Don't validate if no API Key
@@ -478,6 +495,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		
 		$identity = $this->send_to_fub( array(), 'GET', 'identity' );
 		$code = $identity['statusCode'];
+		$msg = '';
 		
 		$result = ($code == 200) ? true : false;
 
@@ -506,7 +524,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	 * Prevent error:
 	 *
 	 * "The text you have entered is not valid. For security reasons, some characters are not allowed. Fix it"
-	 * x
+	 * 
 	 */
 	public function prevent_error( $value ) {
 		return $value;
