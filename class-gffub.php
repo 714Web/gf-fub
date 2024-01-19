@@ -283,7 +283,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 					array(
 						'name'    => 'message',
 						'type'    => 'textarea',
-						'class'   => 'medium merge-tag-support mt-position-right mt-hide_all_fields',
+						'class'   => 'medium merge-tag-support mt-position-right',
 						'label'   => esc_html__( 'Message', 'gffub' ),
 						'description' => '<p>' . sprintf( esc_html__( '(Not required unless the %1$sFUB Pixel is disabled%2$s.)', 'gffub' ), '<a href="admin.php?page=gf_settings&subview=' . $this->_slug . '#disable_pixel" target="_blank">', '</a>' ) . '</p>',
 					),
