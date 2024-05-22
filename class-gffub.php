@@ -435,8 +435,8 @@ class GFFollowUpBoss extends GFFeedAddOn {
 
         // make API call
         $response = curl_exec($ch);
-        if ($response === false) {
-            exit('cURL error: ' . curl_error($ch) . "\n");
+        if ($response === false || !is_array($response) ) {
+            exit('cURL error: ' . curl_error($ch) . "\n" . $response);
         }
 
         // check HTTP status code
@@ -453,9 +453,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
         if ($response) {
 			$result = array();
             $response = json_decode( $response, true );
-			if ( is_array($response) ) {
-				$result = array_merge( $response, array('statusCode' => $code) );
-			}
+			$result = array_merge( $response, array('statusCode' => $code) );
         }
 		return $result;
 	}
@@ -497,10 +495,6 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		}
 		
 		$identity = $this->send_to_fub( array(), 'GET', 'identity' );
-		if ( empty($identity) ) {
-			echo '<div class="alert alert-danger px-3" role="alert"><h4 class="alert-heading">Error</h4><pre>No response from the FUB API.</div>';
-			return;
-		}
 		$code = $identity['statusCode'];
 		$msg = '';
 		
