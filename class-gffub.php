@@ -130,7 +130,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	/**
 	 * Creates a custom page for this add-on.
 	 */
-	public function plugin_page_disabled() {
+	public function plugin_page() {
 		$data = array(
             "source" => 'gf-fub',
             "person" => array(
@@ -152,8 +152,10 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		$response = $code = '';
 		// $response = $this->send_to_fub( $data, 'POST', 'events' );
 		// $response = $this->send_to_fub( array(), 'GET', 'people' );
-		$code = $this->send_to_fub( array(), 'GET', 'identity' );
-		// $code = $code['statusCode'];
+		$response = $this->send_to_fub( array(), 'GET', 'identity' );
+		$code = $response['statusCode'];
+
+		// add response code support
 		?>
 		<div class="wrap">
 			<p><a href="<?php echo admin_url('admin.php?page=gf_settings&subview='.$this->_slug); ?>">Edit Settings</a></p>
@@ -436,7 +438,8 @@ class GFFollowUpBoss extends GFFeedAddOn {
         // make API call
         $response = curl_exec($ch);
         if ($response === false || !is_array($response) ) {
-            exit('cURL error: ' . curl_error($ch) . "\n" . $response);
+            // exit('cURL error: ' . curl_error($ch) . "\n" . $response);
+			$response = array();
         }
 
         // check HTTP status code
@@ -495,7 +498,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		}
 		
 		$identity = $this->send_to_fub( array(), 'GET', 'identity' );
-		$code = $identity['statusCode'];
+		$code = ( !empty($identity) ) ? $identity['statusCode'] : '000';
 		$msg = '';
 		
 		$result = ($code == 200) ? true : false;
@@ -510,6 +513,10 @@ class GFFollowUpBoss extends GFFeedAddOn {
 			} else {
 				$msg .= '<hr><p class="mb-0">This API Key was created by the Account Owner: <code>'.$identity['account']['owner']['email'].'</code>.</p>';
 			}
+		} else if ( $code === '000' ) {
+			$heading = 'Error.';
+			$alert_type = 'danger';
+			$msg .= '<p class="mb-0">The FUB API did not return a valid response.</p>';
 		} else {
 			$heading = 'Not Connected.';
 			$alert_type = 'danger';
