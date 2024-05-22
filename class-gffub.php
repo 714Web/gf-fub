@@ -515,9 +515,9 @@ class GFFollowUpBoss extends GFFeedAddOn {
 				$msg .= '<hr><p class="mb-0">This API Key was created by the Account Owner: <code>'.$identity['account']['owner']['email'].'</code>.</p>';
 			}
 		} else if ( $code === '000' ) {
-			$heading = 'Error.';
+			$heading = '';
 			$alert_type = 'danger';
-			$msg .= '<p class="mb-0">The FUB API did not return a valid response.</p>'.$identity;
+			$msg .= $identity;
 		} else {
 			$heading = 'Not Connected.';
 			$alert_type = 'danger';
