@@ -14,8 +14,10 @@ class GFFollowUpBoss extends GFFeedAddOn {
 
 	protected $_fub_headers = array(
 		'Content-Type: application/json',
-		'X-System: 714Web',
-		'X-System-Key: 4086a077f73e3c56e3760c975655889d',
+		// 'X-System: 714Web',
+		// 'X-System-Key: 4086a077f73e3c56e3760c975655889d',
+		'X-System: 714Web-LLC',
+		'X-System-Key: f429741b064f36c887a77df86bde7a3d',
 	);
 
 	private static $_instance = null;
@@ -130,7 +132,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	/**
 	 * Creates a custom page for this add-on.
 	 */
-	public function plugin_page() {
+	public function plugin_page_disabled() {
 		$data = array(
             "source" => 'gf-fub',
             "person" => array(
@@ -439,7 +441,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
         $response = curl_exec($ch);
         if ($response === false || !is_array($response) ) {
             // exit('cURL error: ' . curl_error($ch) . "\n" . $response);
-			$response = array();
+			return $response;
         }
 
         // check HTTP status code
@@ -454,7 +456,6 @@ class GFFollowUpBoss extends GFFeedAddOn {
 
         // dump response
         if ($response) {
-			$result = array();
             $response = json_decode( $response, true );
 			$result = array_merge( $response, array('statusCode' => $code) );
         }
@@ -498,7 +499,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		}
 		
 		$identity = $this->send_to_fub( array(), 'GET', 'identity' );
-		$code = ( !empty($identity) ) ? $identity['statusCode'] : '000';
+		$code = ( isset($identity['statusCode']) ) ? $identity['statusCode'] : '000';
 		$msg = '';
 		
 		$result = ($code == 200) ? true : false;
@@ -516,7 +517,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		} else if ( $code === '000' ) {
 			$heading = 'Error.';
 			$alert_type = 'danger';
-			$msg .= '<p class="mb-0">The FUB API did not return a valid response.</p>';
+			$msg .= '<p class="mb-0">The FUB API did not return a valid response.</p>'.$identity;
 		} else {
 			$heading = 'Not Connected.';
 			$alert_type = 'danger';
