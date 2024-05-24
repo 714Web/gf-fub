@@ -6,13 +6,14 @@ body {
 .container {
     max-width: 100% !important;
 }
-#universal-message-container {
+.response {
     background: #fff;
     border: 1px solid #e3e6ef;
     border-radius: 3px;
     box-shadow: 0 1px 4px rgba(18,25,97,.078);
     box-sizing: border-box;
+    padding: 15px;
 }
-#universal-message-container sup {
-    color: red;
+#universal-message-container sup, h5 {
+    color: #842029;
 }

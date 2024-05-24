@@ -14,10 +14,8 @@ class GFFollowUpBoss extends GFFeedAddOn {
 
 	protected $_fub_headers = array(
 		'Content-Type: application/json',
-		// 'X-System: 714Web',
-		// 'X-System-Key: 4086a077f73e3c56e3760c975655889d',
-		'X-System: 714Web-LLC',
-		'X-System-Key: f429741b064f36c887a77df86bde7a3d',
+		'X-System: 714Web',
+		'X-System-Key: 4086a077f73e3c56e3760c975655889d',
 	);
 
 	private static $_instance = null;
@@ -132,7 +130,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	/**
 	 * Creates a custom page for this add-on.
 	 */
-	public function plugin_page_disabled() {
+	public function plugin_page() {
 		$data = array(
             "source" => 'gf-fub',
             "person" => array(
@@ -153,24 +151,26 @@ class GFFollowUpBoss extends GFFeedAddOn {
 
 		$response = $code = '';
 		// $response = $this->send_to_fub( $data, 'POST', 'events' );
-		// $response = $this->send_to_fub( array(), 'GET', 'people' );
-		$response = $this->send_to_fub( array(), 'GET', 'identity' );
-		$code = $response['statusCode'];
+		$response = $this->send_to_fub( array(), 'POST', 'events' );
+		// $response = $this->send_to_fub( array(), 'GET', 'identity' );
+		$code = ( is_array($response) ) ? $response['statusCode'] : 'No response code from the API.';
 
 		// add response code support
 		?>
 		<div class="wrap">
 			<p><a href="<?php echo admin_url('admin.php?page=gf_settings&subview='.$this->_slug); ?>">Edit Settings</a></p>
 
-			<div class="alert alert-danger px-3 w-25" role="alert"><h4 class="alert-heading mb-0">Test Mode</h4></div>
+			<div class="alert alert-danger px-3 w-25 mx-auto text-center" role="alert"><h5 class="alert-heading mb-0">Debug Mode Enabled</h5></div>
 
 			<div id="universal-message-container">
 				<div class="container">
 					<div class="row">
 						<div class="col">
-							Code: <br><pre><?php print_r($code); ?></pre>
+							<h5 class="mt-5">Response Code:</h5>
+							<div class="response"><pre><?php print_r($code); ?></pre></div>
 							<br>
-							Response: <br><pre><?php print_r($response); ?></pre>
+							<h5>Full Response:</h5>
+							<div class="response"><pre><?php print_r($response); ?></pre></div>
 						</div>
 					</div>
 				</div>
@@ -439,9 +439,8 @@ class GFFollowUpBoss extends GFFeedAddOn {
 
         // make API call
         $response = curl_exec($ch);
-        if ($response === false || !is_array($response) ) {
-            // exit('cURL error: ' . curl_error($ch) . "\n" . $response);
-			return $response;
+        if ($response === false ) {
+            exit('cURL error: ' . curl_error($ch) . "\n");
         }
 
         // check HTTP status code
@@ -457,7 +456,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
         // dump response
         if ($response) {
             $response = json_decode( $response, true );
-			$result = array_merge( $response, array('statusCode' => $code) );
+			$result = ( is_array($response) ) ? array_merge( $response, array('statusCode' => $code) ) : array('statusCode' => $code);
         }
 		return $result;
 	}
@@ -483,7 +482,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	// # HELPERS / CALLBACKS --------------------------------------------------------------------------------------
 
 	/**
-	 * The feedback callback for the 'mytextbox' setting on the plugin settings page and the 'mytext' setting on the form settings page.
+	 * The feedback callback
 	 *
 	 * @param string $value The setting value.
 	 *
@@ -499,12 +498,10 @@ class GFFollowUpBoss extends GFFeedAddOn {
 		}
 		
 		$identity = $this->send_to_fub( array(), 'GET', 'identity' );
-		$code = ( isset($identity['statusCode']) ) ? $identity['statusCode'] : '000';
+		$code = ( isset($identity['statusCode']) ) ? $identity['statusCode'] : 000;
 		$msg = '';
-		
-		$result = ($code == 200) ? true : false;
 
-		if ( $result ) {
+		if ( $code === 200 ) {
 			$heading = 'Connected!';
 			$alert_type = 'success';
 			$msg = '<p>Account: <code>'.$identity['account']['id'].'</code> &nbsp; Domain: <code>'.$identity['account']['domain'].'</code> &nbsp; Account Owner: <code>'.$identity['account']['owner']['name'].'</code> &nbsp; Plugin X-System: <code>714Web</code>'.'</p>';
@@ -514,17 +511,33 @@ class GFFollowUpBoss extends GFFeedAddOn {
 			} else {
 				$msg .= '<hr><p class="mb-0">This API Key was created by the Account Owner: <code>'.$identity['account']['owner']['email'].'</code>.</p>';
 			}
-		} else if ( $code === '000' ) {
-			$heading = '';
-			$alert_type = 'danger';
-			$msg .= $identity;
-		} else {
+		} else if ( $code === 400 ) {
 			$heading = 'Not Connected.';
 			$alert_type = 'danger';
 			$msg .= '<p class="mb-0">This API Ket is NOT VALID. Please <a href="https://help.followupboss.com/hc/en-us/articles/360014289393-API-Key" target="_blank" class="alert-link">create a new one</a> using an admin user or the account owner.</p>';
+		} else {
+			$heading = '';
+			$alert_type = 'warning';
+			$msg .= '<p>Account info and API key could not be verified because FUB did not return a valid response.</p>';
+			$msg .= '<hr><p class="mb-0">statusCode: '.$code.'</p>';
 		}
 		
 		echo '<div class="alert alert-'.$alert_type.' px-3" role="alert"><h4 class="alert-heading">'.$heading.'</h4>'.$msg.'</div>';
+
+
+		// If the FUB API /identity endpoint isn't responding, make sure the /events endpoint is still accepting lead data
+		$events = $this->send_to_fub( array(), 'POST', 'events' ); // if working properly it should return 400 since we are sending an empty array
+		$events_code = ( isset($events['statusCode']) ) ? $events['statusCode'] : 000;
+
+		if ( $events_code === 400 && ( $code !== 200 & $code !== 400 ) ) {
+			$heading = 'Success!';
+			$alert_type = 'success';
+			$msg = '<p class="mb-0">FUB is accepting data for leads using your API Key.</p>';
+			echo '<div class="alert alert-'.$alert_type.' px-3" role="alert"><h4 class="alert-heading">'.$heading.'</h4>'.$msg.'</div>';
+		}
+
+
+		if ( $code !== 200 || $code !== 400 ) { return; } // if no valid response, do not validate
 
 		return $result;
 	}
