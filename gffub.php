@@ -3,7 +3,7 @@
 Plugin Name: Gravity Forms FUB Integration Add-On
 Plugin URI: https://github.com/jeremycaris/gf-fub
 Description: A Gravity Forms add-on to assign a custom lead source and tags utilizing the Follow Up Boss Open API and to easily integrate the Follow Up Boss Pixel.
-Version: 0.12
+Version: 0.13
 Author: Jeremy Caris
 Author URI: https://github.com/jeremycaris
 
@@ -24,7 +24,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-define( 'GF_FUB_VERSION', '0.12' );
+define( 'GF_FUB_VERSION', '0.13' );
 
 add_action( 'gform_loaded', array( 'GF_FollowUpBoss_Bootstrap', 'load' ), 5 );
 

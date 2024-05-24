@@ -130,7 +130,7 @@ class GFFollowUpBoss extends GFFeedAddOn {
 	/**
 	 * Creates a custom page for this add-on.
 	 */
-	public function plugin_page() {
+	public function plugin_page_disabled() {
 		$data = array(
             "source" => 'gf-fub',
             "person" => array(
