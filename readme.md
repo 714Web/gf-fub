@@ -9,6 +9,13 @@
 
 ---
 
+## Security Feature: API Key Masking
+
+> [!IMPORTANT]
+> For your privacy, the FUB API key field in plugin settings is automatically masked in the UI, showing only the last four characters (e.g., `************oIoY`). The real value is always submitted and editable—masking is for display only. No visibility toggle is provided.
+
+---
+
 ## Overview
 
 **Gravity Forms FUB Integration Add-On** enables WordPress sites using Gravity Forms to automatically send leads to [Follow Up Boss](https://www.followupboss.com/) via the FUB Open API. Assign custom lead sources, tags, and integrate the FUB Pixel for advanced tracking—all from your WordPress dashboard.

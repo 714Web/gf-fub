@@ -66,33 +66,40 @@ class GFFollowUpBoss extends GFFeedAddOn
 
 	// # SCRIPTS & STYLES --------------------------------------------------------------------------------------
 
-	/**
-	 * Return the scripts which should be enqueued for the plugin.
-	 *
-	 * @return array List of scripts to enqueue, including dependencies and conditions.
-	 */
-	public function scripts()
-	{
-		$scripts = array(
-			array(
-				'handle'  => 'bootstrap',
-				'src'     => $this->get_base_url() . '/js/bootstrap.min.js',
-				'version' => '5.3.1',
-				'deps'    => array('jquery'),
-				'enqueue' => array(
+			/**
+			 * Return the scripts which should be enqueued for the plugin.
+			 *
+			 * @return array List of scripts to enqueue, including dependencies and conditions.
+			 */
+			public function scripts()
+			{
+				$scripts = array(
 					array(
-						'admin_page' => array(
-							'plugin_page',
-							'plugin_settings'
+						'handle'  => 'bootstrap',
+						'src'     => $this->get_base_url() . '/js/bootstrap.min.js',
+						'version' => '5.3.1',
+						'deps'    => array('jquery'),
+						'enqueue' => array(
+							array(
+								'admin_page' => array(
+									'plugin_page',
+									'plugin_settings'
+								)
+							)
+						)
+					),
+					array(
+						'handle'  => 'gffub-apikey-mask',
+						'src'     => $this->get_base_url() . '/js/gffub-apikey-mask.js',
+						'version' => $this->_version,
+						'deps'    => array('jquery'),
+						'enqueue' => array(
+							array('admin_page' => array('plugin_settings'))
 						),
-					)
-				)
-			),
-
-		);
-
-		return array_merge(parent::scripts(), $scripts);
-	}
+					),
+				);
+				return array_merge(parent::scripts(), $scripts);
+			}
 
 	/**
 	 * Return the stylesheets which should be enqueued for the plugin.
@@ -206,32 +213,32 @@ class GFFollowUpBoss extends GFFeedAddOn
 <?php
 	}
 
-	/**
-	 * Configure the settings fields rendered on the add-on settings tab.
-	 *
-	 * Returns an array of settings fields for the plugin settings page, including API key and pixel tracking code.
-	 *
-	 * @return array Settings fields configuration.
-	 */
-	public function plugin_settings_fields()
-	{
-		return array(
-			array(
-				'title'  => esc_html__($this->_short_title . ' Settings', 'gffub'),
-				'fields' => array(
+		/**
+		 * Configure the settings fields rendered on the add-on settings tab.
+		 *
+		 * Returns an array of settings fields for the plugin settings page, including API key and pixel tracking code.
+		 *
+		 * @return array Settings fields configuration.
+		 */
+			public function plugin_settings_fields()
+			{
+				return array(
 					array(
-						'name'              => 'gffub-apikey',
-						'label'             => esc_html__('FUB API Key', 'gffub'),
-						// translators: %1 is an opening <a> tag, and %2 is a closing </a> tag.
-						'description' => '<p>' . sprintf(
-							esc_html__('Create a new API key to connect with your Follow Up Boss account. For step-by-step instructions, %1$sclick here.%2$s', 'gffub'),
-							'<a href="' . esc_url('https://help.followupboss.com/hc/en-us/articles/360014289393-API-Key') . '" target="_blank">',
-							'</a>'
-						) . '</p>',
-						'type'              => 'text',
-						'class'             => 'small',
-						'feedback_callback' => array($this, 'is_valid_setting'),
-					),
+						'title'  => esc_html__($this->_short_title . ' Settings', 'gffub'),
+						'fields' => array(
+						   array(
+								'name'              => 'gffub-apikey',
+								'label'             => esc_html__('FUB API Key', 'gffub'),
+								// translators: %1 is an opening <a> tag, and %2 is a closing </a> tag.
+								'description' => '<p>' . sprintf(
+									esc_html__('Create a new API key to connect with your Follow Up Boss account. For step-by-step instructions, %1$sclick here.%2$s', 'gffub'),
+									'<a href="' . esc_url('https://help.followupboss.com/hc/en-us/articles/360014289393-API-Key') . '" target="_blank">',
+									'</a>'
+								) . '</p>',
+								'type'              => 'text',
+								'class'             => 'small gffub-apikey-mask',
+								'feedback_callback' => array($this, 'is_valid_setting'),
+						),
 					array(
 						'name'    => 'gffub-pixel',
 						'label'   => esc_html__('FUB Pixel Tracking Code', 'gffub'),

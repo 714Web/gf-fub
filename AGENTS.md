@@ -83,6 +83,7 @@ Gravity Forms FUB Integration Add-On is a WordPress plugin that connects Gravity
 - **Environment configs:**
   - All configuration is via the WordPress admin UI.
 
+
 ## Security Considerations
 
 - **Secrets:**
@@ -91,6 +92,17 @@ Gravity Forms FUB Integration Add-On is a WordPress plugin that connects Gravity
   - All API requests to FUB use the configured API key.
 - **Permissions:**
   - Only WordPress admins can configure plugin settings.
+
+## API Key Masking (UI Security)
+- The FUB API key field in plugin settings is masked in the UI, showing only the last four characters for privacy.
+- Masking is handled by `/js/gffub-apikey-mask.js` and the `gffub-apikey-mask` class.
+- The real value is always submitted; masking is for display only.
+- On focus, the real value is shown for editing; on blur, masking is reapplied.
+- If the field name or markup changes, update the JS selector accordingly.
+
+### Agent Workflow
+- When modifying settings UI or JS, verify masking works for all cases (new, existing, empty keys).
+- No visibility toggle is provided; masking is always enforced except during edit.
 
 ## Pull Request Guidelines
 

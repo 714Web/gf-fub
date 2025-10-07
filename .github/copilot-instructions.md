@@ -21,6 +21,18 @@
 - Only WordPress admins can configure plugin settings.
 - No monorepo structure; this is a single-package plugin.
 
+## API Key Masking (Security Feature)
+- The FUB API key field in plugin settings is automatically masked in the UI, showing only the last four characters (e.g., `************oIoY`).
+- Masking is implemented via `/js/gffub-apikey-mask.js` and targets any input with the `gffub-apikey-mask` class.
+- The real value is preserved and submitted; masking is for display only.
+- On focus, the real value is shown for editing; on blur, masking is reapplied.
+- If you change the field name or markup, ensure the masking JS still targets the correct field/class.
+
+### Agent Notes
+- When updating settings UI or JS, always test that masking works for new, existing, and empty API keys.
+- If Gravity Forms changes field rendering, update the selector in the JS as needed.
+- Do not add a visibility toggle; masking is always enforced except during edit.
+
 ## Integration Points
 - **Gravity Forms Add-On Framework:** Used for feed management, field mapping, and admin UI.
 - **Follow Up Boss API:** All lead data is sent via the FUB Open API (`/v1/events`).
