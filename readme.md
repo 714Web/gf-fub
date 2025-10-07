@@ -1,4 +1,3 @@
-
 <div align="center">
   <img src="img/gf-fub.svg" alt="Gravity Forms FUB Integration" height="96" />
 </div>
