@@ -319,7 +319,7 @@ class GFFollowUpBoss extends GFFeedAddOn
 								'name'     => 'name',
 								'label'    => esc_html__('Name (Full Name)', 'gffub'),
 								'required' => 0,
-								'field_type' => array('name', 'hidden'),
+								'field_type' => array('name', 'text', 'hidden'),
 							),
 							array(
 								'name'       => 'email',
