@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 GFForms::include_feed_addon_framework();
 
 class GFFollowUpBoss extends GFFeedAddOn
@@ -8,18 +12,27 @@ class GFFollowUpBoss extends GFFeedAddOn
 	protected $_version = GF_FUB_VERSION;
 	protected $_min_gravityforms_version = '1.9';
 	protected $_slug = 'gffub';
-	protected $_path = 'gffub/gffub.php';
+	protected $_path = 'gf-fub/gffub.php';
 	protected $_full_path = __FILE__;
 	protected $_title = 'Gravity Forms FUB Integration';
 	protected $_short_title = 'FUB Integration';
 
-	protected $_fub_headers = array(
-		'Content-Type: application/json',
-		'X-System: 714Web',
-		'X-System-Key: 4086a077f73e3c56e3760c975655889d',
-	);
-
 	private static $_instance = null;
+
+	/**
+	 * Builds the headers sent to the FUB API, reading the partner system
+	 * key from GF_FUB_SYSTEM_KEY (wp-config.php) instead of a hardcoded value.
+	 *
+	 * @return array
+	 */
+	private function get_fub_headers()
+	{
+		return array(
+			'Content-Type: application/json',
+			'X-System: 714Web',
+			'X-System-Key: ' . ( defined( 'GF_FUB_SYSTEM_KEY' ) ? GF_FUB_SYSTEM_KEY : '' ),
+		);
+	}
 
 	/**
 	 * Retrieve the singleton instance of the GFFollowUpBoss class.
@@ -256,7 +269,7 @@ class GFFollowUpBoss extends GFFeedAddOn
 						'label'   => esc_html__('Disable FUB Pixel', 'gffub'),
 						'type'    => 'checkbox',
 						'name'    => 'disable-pixel-title',
-						'description' => '<p style="color: #e54c3b;"><a name="disable_pixel"></a>' . sprintf(esc_html__('Only use this option if you need to set a custom source (for NEW leads only) since this will disable all Pixel functionality, such as providing real-time tracking of users throughout your site.', 'gffub')) . '</p><p>' . sprintf(esc_html__('Note: If the Pixel is disabled, only forms that have a FUB Integration feed configured will send leads to your account.', 'gffub')) . '</p>',
+						'description' => '<p style="color: #e54c3b;"><a name="disable_pixel"></a>' . esc_html__('Only use this option if you need to set a custom source (for NEW leads only) since this will disable all Pixel functionality, such as providing real-time tracking of users throughout your site.', 'gffub') . '</p><p>' . esc_html__('Note: If the Pixel is disabled, only forms that have a FUB Integration feed configured will send leads to your account.', 'gffub') . '</p>',
 						'choices' => array(
 							array(
 								'label' => esc_html__('Disable the FUB Pixel', 'gffub'),
@@ -319,7 +332,7 @@ class GFFollowUpBoss extends GFFeedAddOn
 								'name'     => 'name',
 								'label'    => esc_html__('Name (Full Name)', 'gffub'),
 								'required' => 0,
-								'field_type' => array('name', 'text', 'hidden'),
+								'field_type' => array('name', 'hidden'),
 							),
 							array(
 								'name'       => 'email',
@@ -340,7 +353,7 @@ class GFFollowUpBoss extends GFFeedAddOn
 						'type'    => 'text',
 						'class'   => 'medium merge-tag-support mt-position-right mt-hide_all_fields',
 						'label'   => esc_html__('Tags', 'gffub'),
-						'description' => '<p>' . sprintf(esc_html__('Type any tags and/or utilize Gravity Forms Merge Tags. Must be a comma separated list (e.g. new lead, My Tag, web source).', 'gffub')) . '</p>',
+						'description' => '<p>' . esc_html__('Type any tags and/or utilize Gravity Forms Merge Tags. Must be a comma separated list (e.g. new lead, My Tag, web source).', 'gffub') . '</p>',
 					),
 					array(
 						'name'    => 'message',
@@ -430,13 +443,13 @@ class GFFollowUpBoss extends GFFeedAddOn
 	 */
 	public function process_feed($feed, $entry, $form)
 	{
-		$feedName  	= $feed['meta']['feedName'];
-		$source  	= $feed['meta']['source'];
+		$feedName  	= $feed['meta']['feedName'] ?? '';
+		$source  	= $feed['meta']['source'] ?? '';
 		$source 	= GFCommon::replace_variables($source, $form, $entry, false, false, false, 'text'); // process merge tags
-		$tags 		= $feed['meta']['tags'];
+		$tags 		= $feed['meta']['tags'] ?? '';
 		$tags 		= GFCommon::replace_variables($tags, $form, $entry, false, false, false, 'text'); // process merge tags
 		$tags 		= preg_split('/, ?/', $tags);
-		$msg  		= $feed['meta']['message'];
+		$msg  		= $feed['meta']['message'] ?? '';
 		$msg 		= GFCommon::replace_variables($msg, $form, $entry, false, false, false, 'text'); // process merge tags
 		$msg 		= trim($msg);
 
@@ -455,15 +468,15 @@ class GFFollowUpBoss extends GFFeedAddOn
 		$data = array(
 			"source" => $source,
 			"person" => array(
-				"name" 		=> $merge_vars['name'],
+				"name" 		=> $merge_vars['name'] ?? '',
 				"emails" 	=> array(
 					array(
-						"value" => $merge_vars['email']
+						"value" => $merge_vars['email'] ?? ''
 					)
 				),
 				"phones"	 => array(
 					array(
-						"value" => $merge_vars['phone']
+						"value" => $merge_vars['phone'] ?? ''
 					)
 				),
 				"tags" => $tags,
@@ -512,11 +525,13 @@ class GFFollowUpBoss extends GFFeedAddOn
 		// init cURL
 		$ch = curl_init('https://api.followupboss.com/v1/' . $endpoint);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 		curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 		curl_setopt($ch, CURLOPT_USERPWD, $apiKey . ':');
 		// Only send custom headers for endpoints other than /identity
 		if ($endpoint !== 'identity') {
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $this->_fub_headers);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $this->get_fub_headers());
 		}
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
 		if (strtoupper($method) !== 'GET') {
@@ -597,7 +612,7 @@ class GFFollowUpBoss extends GFFeedAddOn
 
 		// Don't validate if no API Key
 		if (empty($key)) {
-			return;
+			return false;
 		}
 
 		$identity = $this->send_to_fub(array(), 'GET', 'identity');
@@ -607,26 +622,26 @@ class GFFollowUpBoss extends GFFeedAddOn
 		if ($code === 200) {
 			$heading = 'Connected!';
 			$alert_type = 'success';
-			$msg = '<p>Account: <code>' . $identity['account']['id'] . '</code> &nbsp; Domain: <code>' . $identity['account']['domain'] . '</code> &nbsp; Account Owner: <code>' . $identity['account']['owner']['name'] . '</code> &nbsp; Plugin X-System: <code>714Web</code>' . '</p>';
+			$msg = '<p>Account: <code>' . esc_html( $identity['account']['id'] ?? '' ) . '</code> &nbsp; Domain: <code>' . esc_html( $identity['account']['domain'] ?? '' ) . '</code> &nbsp; Account Owner: <code>' . esc_html( $identity['account']['owner']['name'] ?? '' ) . '</code> &nbsp; Plugin X-System: <code>714Web</code>' . '</p>';
 
-			if ($identity['account']['owner']['email'] !== $identity['user']['email']) {
-				$msg .= '<hr><p class="mb-0">This API Key was created by <code>' . $identity['user']['name'] . '</code> <em style="font-weight: bold;">(If this FUB user is deleted, this API Key will no longer work.)</em></p>';
+			if (($identity['account']['owner']['email'] ?? '') !== ($identity['user']['email'] ?? '')) {
+				$msg .= '<hr><p class="mb-0">This API Key was created by <code>' . esc_html( $identity['user']['name'] ?? '' ) . '</code> <em style="font-weight: bold;">(If this FUB user is deleted, this API Key will no longer work.)</em></p>';
 			} else {
-				$msg .= '<hr><p class="mb-0">This API Key was created by the Account Owner: <code>' . $identity['account']['owner']['email'] . '</code>.</p>';
+				$msg .= '<hr><p class="mb-0">This API Key was created by the Account Owner: <code>' . esc_html( $identity['account']['owner']['email'] ?? '' ) . '</code>.</p>';
 			}
 			echo '<div class="alert alert-' . $alert_type . ' px-3" role="alert"><h4 class="alert-heading">' . $heading . '</h4>' . $msg . '</div>';
 			return true;
 		} else if ($code === 400) {
 			$heading = 'Not Connected.';
 			$alert_type = 'danger';
-			$msg .= '<p class="mb-0">This API Ket is NOT VALID. Please <a href="https://help.followupboss.com/hc/en-us/articles/360014289393-API-Key" target="_blank" class="alert-link">create a new one</a> using an admin user or the account owner.</p>';
+			$msg .= '<p class="mb-0">This API Key is NOT VALID. Please <a href="https://help.followupboss.com/hc/en-us/articles/360014289393-API-Key" target="_blank" class="alert-link">create a new one</a> using an admin user or the account owner.</p>';
 			echo '<div class="alert alert-' . $alert_type . ' px-3" role="alert"><h4 class="alert-heading">' . $heading . '</h4>' . $msg . '</div>';
 			return false;
 		} else {
 			$heading = '';
 			$alert_type = 'warning';
 			$msg .= '<p>Account info and API key could not be verified because FUB did not return a valid response.</p>';
-			$msg .= '<hr><p class="mb-0">statusCode: ' . $code . '</p>';
+			$msg .= '<hr><p class="mb-0">statusCode: ' . esc_html( $code ) . '</p>';
 			echo '<div class="alert alert-' . $alert_type . ' px-3" role="alert"><h4 class="alert-heading">' . $heading . '</h4>' . $msg . '</div>';
 			// If the FUB API /identity endpoint isn't responding, make sure the /events endpoint is still accepting lead data
 			$events = $this->send_to_fub(array(), 'POST', 'events'); // if working properly it should return 400 since we are sending an empty array
